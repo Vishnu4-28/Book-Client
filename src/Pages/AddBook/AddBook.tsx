@@ -157,7 +157,7 @@ const AddBook: React.FC = () => {
                         label="Author"
                         name="author"
                         value={book.author}
-                        onChange={handleChange}
+                        onChange={handleChange} 
                         margin="normal"
                         required
                         error={!!getFieldError('author')}
