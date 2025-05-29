@@ -9,7 +9,7 @@ import RestoreIcon from '@mui/icons-material/Restore';
 import { useNavigate } from 'react-router-dom';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import { useLoadingState, useLoadingStates } from '../../hooks/useLoadingState';
-import { encryptId } from '../../utils/encryption';
+// import { encryptId } from '../../utils/encryption';
 // import RemoveRedEyeIcon from '@mui/icons-material/RemoveRedEye';
 
 interface Book {

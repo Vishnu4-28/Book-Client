@@ -1,7 +1,7 @@
 import CryptoJS from 'crypto-js';
 
 const ENCRYPTION_KEY = import.meta.env.VITE_ENCRYPTION_KEY || 'your-secure-encryption-key-here';
-const ENCRYPTION_IV = import.meta.env.VITE_ENCRYPTION_IV || 'your-secure-iv-here';
+// const ENCRYPTION_IV = import.meta.env.VITE_ENCRYPTION_IV || 'your-secure-iv-here';
 
 export const encryptId = (id: string): string => {
     try {
