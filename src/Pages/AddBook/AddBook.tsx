@@ -148,7 +148,7 @@ const AddBook: React.FC = () => {
                         value={book.title}
                         onChange={handleChange}
                         margin="normal"
-                        required
+                        required   
                         error={!!getFieldError('title')}
                         helperText={getFieldError('title')}
                     />
