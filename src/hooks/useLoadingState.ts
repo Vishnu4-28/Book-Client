@@ -5,6 +5,7 @@ interface LoadingStates {
     deleteBook: boolean;
     restoreBook: boolean;
     updateBook: boolean;
+    FinalDeleteBook : boolean;
 }
 
 export const useLoadingState = (operations?: (keyof LoadingStates)[]) => {

@@ -6,6 +6,7 @@ import AddBook from './Pages/AddBook/AddBook';
 import Signup from './Pages/Signup/Signup';
 import SignIn from './Pages/SignIn/SignIn';
 import ProtectedRoute from './components/ProtectedRoute';
+// import BookInventoryLogin from './Pages/Home/test';
 
 const App: React.FC = () => {
     return (
@@ -13,6 +14,7 @@ const App: React.FC = () => {
             <Routes>
                 <Route path="/signup" element={<Signup />} />
                 <Route path="/login" element={<SignIn />} />
+                     {/* <Route path="/test" element={<BookInventoryLogin />} /> */}
                 <Route
                     path="/"
                     element={

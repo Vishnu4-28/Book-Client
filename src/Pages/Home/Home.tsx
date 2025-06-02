@@ -1,14 +1,16 @@
 import { useEffect, useState } from 'react';
-import { getBook, deleteBook, GetBookById, getDeletedBook, RestoreBook } from '../../store/counterSlice';
+import { getBook, deleteBook, GetBookById, getDeletedBook, RestoreBook, FinalDeleteBook } from '../../store/counterSlice';
 import { useDispatch, useSelector } from 'react-redux';
 import type { AppDispatch} from '../../store/store';
 import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Typography, Box, Button } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import ModeEditIcon from '@mui/icons-material/ModeEdit';
 import RestoreIcon from '@mui/icons-material/Restore';
+import ImageIcon from '@mui/icons-material/Image';
 import { useNavigate } from 'react-router-dom';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import { useLoadingState, useLoadingStates } from '../../hooks/useLoadingState';
+import ImageUploadModal from '../../components/ImageUploadModal/ImageUploadModal';
 // import { encryptId } from '../../utils/encryption';
 // import RemoveRedEyeIcon from '@mui/icons-material/RemoveRedEye';
 
@@ -20,6 +22,7 @@ interface Book {
     author : string;
     isbn : number ;
     quantity : number;   
+    filePath : string;
 }
 
 function Home() {
@@ -29,15 +32,31 @@ function Home() {
     const loadingStates = useLoadingStates();
     const isLoading = useLoadingState();
     const [IsRestore, SetIsRestore] = useState(false);
+    const [isImageModalOpen, setIsImageModalOpen] = useState(false);
     const navigate = useNavigate();
-    
+    const backendUrl = 'https://localhost:7298/'; 
     const handleDelete = async (bookId: string) => {
-        try {
+        if(IsRestore){
+
+            try{
+                await dispatch(FinalDeleteBook(bookId));
+                  await dispatch(getDeletedBook());
+            }catch(error){
+                console.error('Failed to Final delete book:', error);
+            }
+        }
+        else
+        {
+              
+            try {
             await dispatch(deleteBook(bookId));
             await dispatch(getBook());
         } catch (error) {
             console.error('Failed to delete book:', error);
-        }
+        }  }
+
+
+        
     };
 
     const handleUpdate = async (bookId: string) => {
@@ -93,10 +112,12 @@ function Home() {
                         <TableCell>Author</TableCell>
                         <TableCell>ISBN</TableCell>
                         <TableCell>Quantity</TableCell>
+                        <TableCell>Img</TableCell>
+
                         {IsRestore ? (
                             <>
                                 <TableCell>Restore</TableCell>
-                                <TableCell>Delete</TableCell>
+                                <TableCell>Final Delete</TableCell>
                             </>
                         ) : (
                             <>
@@ -114,6 +135,16 @@ function Home() {
                             <TableCell>{Book.isbn}</TableCell>
                             <TableCell>{Book.quantity}</TableCell>
                             <TableCell>
+                            <img
+                            src={`${backendUrl}/${Book?.filePath?.replace(/\\/g, '/')}`}
+                            alt={Book.title}
+                            width="100"
+                            height="150"
+                            style={{ borderRadius: "5px", objectFit: "cover" }} 
+                            />
+                               
+                                </TableCell>
+                            <TableCell>
                                 {IsRestore ? (
                                     <RestoreIcon 
                                         style={{cursor: "pointer"}} 
@@ -127,7 +158,17 @@ function Home() {
                                         color={loadingStates.deleteBook ? "disabled" : "primary"}
                                     />
                                 )}
+
                             </TableCell>
+                             {IsRestore && (
+                            <TableCell>
+                                  <DeleteIcon 
+                                        style={{cursor: "pointer"}} 
+                                        onClick={() => handleDelete(Book.book_Id)}
+                                        color={loadingStates.deleteBook ? "disabled" : "primary"}
+                                    />  
+                            </TableCell>
+                            )}
                             <TableCell>
                                 {!IsRestore && (
                                     <ModeEditIcon 
@@ -137,6 +178,7 @@ function Home() {
                                     />
                                 )}
                             </TableCell>
+                  
                         </TableRow>
                     ))}
                 </TableBody>
@@ -165,9 +207,23 @@ function Home() {
                 >
                     {IsRestore ? 'View All Books' : 'View Deleted Books'}
                 </Button>
+                <Button 
+                    variant="contained" 
+                    color="primary" 
+                    onClick={() => setIsImageModalOpen(true)}
+                    disabled={isLoading}
+                    startIcon={<ImageIcon />}
+                >
+                    Upload Book Images
+                </Button>
             </Box>
             
             {contents}
+
+            <ImageUploadModal 
+                open={isImageModalOpen}
+                onClose={() => setIsImageModalOpen(false)}
+            />
         </Box>
     );
 }

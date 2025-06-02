@@ -1,7 +1,7 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
 import axios, { AxiosError } from 'axios';
-
+import api from '../services/api'; 
 interface ValidationErrors {
     Title?: string;
     Author?: string;
@@ -28,8 +28,10 @@ interface BookState {
     loadingStates: {
         fetchBooks: boolean;
         deleteBook: boolean;
+        FinalDeleteBook: boolean;
         restoreBook: boolean;
         updateBook: boolean;
+        uploadImage: boolean;
     };
 }
 
@@ -83,6 +85,17 @@ export const deleteBook = createAsyncThunk(
 );
 
 
+export const FinalDeleteBook = createAsyncThunk(
+  'counter/FinalDeleteBook',
+  async (bookId: string) => {
+    const response = await axios.delete(`https://localhost:7298/Books/deleteBook?book_id=${bookId}`);
+    return response.data;
+  }
+);
+
+
+
+
 export const RestoreBook = createAsyncThunk(
   'counter/RestoreBook',
   async (bookId: string) => {
@@ -121,13 +134,31 @@ export const updateBookData = createAsyncThunk(
   }
 );
 
-
-
-
-
-
-
-
+export const uploadBookImage = createAsyncThunk(
+    'counter/uploadBookImage',
+    async (formData: FormData, { rejectWithValue }) => {
+        try {
+            const response = await axios.post('https://localhost:7298/Auth/uploadImage', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                    'accept': '*/*'
+                },
+            });
+            return response.data;
+        } catch (error) {
+            if (axios.isAxiosError(error)) {
+                const axiosError = error as AxiosError<ApiErrorResponse>;
+                if (axiosError.response?.data) {
+                    return rejectWithValue(axiosError.response.data);
+                }
+            }
+            return rejectWithValue({
+                statusCode: 500,
+                message: 'An unexpected error occurred while uploading image'
+            });
+        }
+    }
+);
 
 // export const restoreBook = createAsyncThunk(
 //     'counter/restoreBook',
@@ -159,8 +190,10 @@ const initialState: BookState = {
   loadingStates: {
     fetchBooks: false,
     deleteBook: false,
+    FinalDeleteBook : false,
     restoreBook: false,
-    updateBook: false
+    updateBook: false,
+    uploadImage: false
   }
 };
 
@@ -205,6 +238,21 @@ export const bookSlice = createSlice({
         state.status = 'failed';
         state.error = action.error.message || 'Failed to delete book';
       })
+      // FinalDeleteBook
+         .addCase(FinalDeleteBook.pending, (state) => {
+        state.loadingStates.FinalDeleteBook = true;
+      })
+      .addCase(FinalDeleteBook.fulfilled, (state) => {
+        state.loadingStates.FinalDeleteBook = false;
+        state.status = 'succeeded';
+      })
+      .addCase(FinalDeleteBook.rejected, (state, action) => {
+        state.loadingStates.FinalDeleteBook = false;
+        state.status = 'failed';
+        state.error = action.error.message || 'Failed to delete book';
+      })
+
+
       // Restore Book
       .addCase(RestoreBook.pending, (state) => {
         state.loadingStates.restoreBook = true;
@@ -262,6 +310,27 @@ export const bookSlice = createSlice({
           state.ErrorMsg = {
             statusCode: 500,
             message: action.error.message || 'Failed to add book'
+          };
+        }
+      })
+      // Upload Book Image
+      .addCase(uploadBookImage.pending, (state) => {
+        state.loadingStates.uploadImage = true;
+        state.status = 'loading';
+      })
+      .addCase(uploadBookImage.fulfilled, (state) => {
+        state.loadingStates.uploadImage = false;
+        state.status = 'succeeded';
+      })
+      .addCase(uploadBookImage.rejected, (state, action) => {
+        state.loadingStates.uploadImage = false;
+        state.status = 'failed';
+        if (action.payload) {
+          state.ErrorMsg = action.payload as ApiErrorResponse;
+        } else {
+          state.ErrorMsg = {
+            statusCode: 500,
+            message: action.error.message || 'Failed to upload image'
           };
         }
       });

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { TextField, Button, Box, Typography, Paper, Alert, Snackbar } from '@mui/material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAppDispatch } from '../../store/store';
-import { addBook, getBook, updateBookData } from '../../store/counterSlice';
+import { addBook, getBook, updateBookData, uploadBookImage } from '../../store/counterSlice';
 import { useSelector } from 'react-redux';
 
 interface BookFormData {
@@ -10,6 +10,8 @@ interface BookFormData {
     author: string;
     isbn: string;
     quantity: string;
+    imageCaption?: string;
+    imageDescription?: string;
 }
 
 interface ValidationErrors {
@@ -17,27 +19,38 @@ interface ValidationErrors {
     Author?: string;
     ISBN?: string;
     Quantity?: string;
+    ImageCaption?: string;
+    ImageDescription?: string;
 }
 
 const initialBookState: BookFormData = {
     title: '',
     author: '',
     isbn: '',
-    quantity: ''
+    quantity: '',
+    // imageCaption: '',
+    // imageDescription: ''
 };
 
 const AddBook: React.FC = () => {
     const location = useLocation();
     const navigate = useNavigate();
     const dispatch = useAppDispatch();
-    
+    // const a = 1;
+
     const bookState = useSelector((state: any) => state.counter.updateBookData?.data?.[0]);
     const error = useSelector((state: any) => state.counter.ErrorMsg);
     const apiStatus = useSelector((state: any) => state.counter.status);
     const isUpdateMode = location.pathname.startsWith("/UpdateBook/");
+
     const [bookId, setBookId] = useState<string | undefined>();
+
     const [book, setBook] = useState<BookFormData>(initialBookState);
+
+
     const [showError, setShowError] = useState(false);
+    const [selectedFile, setSelectedFile] = useState<File | null>(null);
+    const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
     useEffect(() => {
         if (isUpdateMode) {
@@ -71,6 +84,16 @@ const AddBook: React.FC = () => {
         setBook(prev => ({ ...prev, [name]: value }));
     };
 
+    // const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    //     const file = e.target.files?.[0];
+    //     if (file) {
+    //         setSelectedFile(file);
+    //         // Create preview URL
+    //         const fileUrl = URL.createObjectURL(file);
+    //         setPreviewUrl(fileUrl);
+    //     }
+    // };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
@@ -82,6 +105,17 @@ const AddBook: React.FC = () => {
             }
 
             if (response.meta.requestStatus === 'fulfilled') {
+                // If there's a selected file, upload it
+                if (selectedFile && response.payload?.book_Id) {
+                    const formData = new FormData();
+                    formData.append('file', selectedFile);
+                    formData.append('Book_id', response.payload.book_Id);
+                    formData.append('ImageCaption', book.imageCaption || '');
+                    formData.append('ImageDescription', book.imageDescription || '');
+
+                    await dispatch(uploadBookImage(formData));
+                }
+
                 await dispatch(getBook());
                 localStorage.removeItem('selectedData');
                 navigate('/');
@@ -110,7 +144,6 @@ const AddBook: React.FC = () => {
     
     useEffect(()=>{
         console.log("error",error);
-        
     },[error])
 
     return (
@@ -152,6 +185,7 @@ const AddBook: React.FC = () => {
                         error={!!getFieldError('title')}
                         helperText={getFieldError('title')}
                     />
+
                     <TextField
                         fullWidth
                         label="Author"
@@ -163,6 +197,7 @@ const AddBook: React.FC = () => {
                         error={!!getFieldError('author')}
                         helperText={getFieldError('author')}
                     />
+
                     <TextField
                         fullWidth
                         label="ISBN"
@@ -174,6 +209,7 @@ const AddBook: React.FC = () => {
                         error={!!getFieldError('ISBN')}
                         helperText={getFieldError('ISBN')}
                     />
+                    
                     <TextField
                         fullWidth
                         label="Quantity"
@@ -186,13 +222,72 @@ const AddBook: React.FC = () => {
                         error={!!getFieldError('quantity')}
                         helperText={getFieldError('quantity')}
                     />
+
+                    {/* Photo Upload Section */}
+                    {/* <Box sx={{ mt: 3, mb: 2 }}>
+                        <Typography variant="h6" gutterBottom>
+                            Book Cover Image
+                        </Typography>
+                        
+                        <input
+                            accept="image/*"
+                            style={{ display: 'none' }}
+                            id="raised-button-file"
+                            type="file"
+                            onChange={handleFileChange}
+                        />
+                        <label htmlFor="raised-button-file">
+                            <Button variant="contained" component="span">
+                                Upload Image
+                            </Button>
+                        </label>
+
+                        {previewUrl && (
+                            <Box sx={{ mt: 2 }}>
+                                <img 
+                                    src={previewUrl} 
+                                    alt="Preview" 
+                                    style={{ 
+                                        maxWidth: '200px', 
+                                        maxHeight: '200px',
+                                        objectFit: 'cover',
+                                        borderRadius: '4px'
+                                    }} 
+                                />
+                            </Box>
+                        )}
+
+                        <TextField
+                            fullWidth
+                            label="Image Caption"
+                            name="imageCaption"
+                            value={book.imageCaption}
+                            onChange={handleChange}
+                            margin="normal"
+                            error={!!getFieldError('imageCaption')}
+                            helperText={getFieldError('imageCaption')}
+                        />
+                        <TextField
+                            fullWidth
+                            label="Image Description"
+                            name="imageDescription"
+                            value={book.imageDescription}
+                            onChange={handleChange}
+                            margin="normal"
+                            multiline
+                            rows={3}
+                            error={!!getFieldError('imageDescription')}
+                            helperText={getFieldError('imageDescription')}
+                        />
+                    </Box> */}
+                    
                     <Box sx={{ mt: 2, display: 'flex', gap: 2 }}>
                         <Button 
                             type="submit" 
                             variant="contained" 
                             color="primary"
                             disabled={apiStatus === 'loading'}
-                        >
+                        >     
                             {apiStatus === 'loading' ? 'Processing...' : isUpdateMode ? 'Update Book' : 'Add Book'}
                         </Button>
                         <Button 
